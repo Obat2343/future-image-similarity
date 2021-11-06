@@ -49,15 +49,16 @@ class encoder_conv(nn.Module):
         self.mp = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
     def forward(self, input):
-        h1 = self.c1(input) # 64 -> 32
-        h2 = self.c2(self.mp(h1)) # 32 -> 16
-        h3 = self.c3(self.mp(h2)) # 16 -> 8
-        h4 = self.c4(self.mp(h3)) # 8 -> 4
-        h5 = self.c5(self.mp(h4)) # 4 -> 2
-        return h5.view(-1, self.dim, 2, 2), [h1, h2, h3, h4]
+        h1 = self.c1(input) # 256 -> 128
+        h2 = self.c2(self.mp(h1)) # 128 -> 64
+        h3 = self.c3(self.mp(h2)) # 64 -> 32
+        h4 = self.c4(self.mp(h3)) # 32 -> 16
+        h5 = self.c5(self.mp(h4)) # 16 -> 14
+        B,C,H,W = h5.shape
+        return h5.view(-1, self.dim, H, W), [h1, h2, h3, h4]
 
 class decoder_conv(nn.Module):
-    def __init__(self, dim, nc=1):
+    def __init__(self, dim, nc=1, height=14, width=14):
         super(decoder_conv, self).__init__()
         self.dim = dim
         # 1 x 1 -> 4 x 4
@@ -93,7 +94,7 @@ class decoder_conv(nn.Module):
 
     def forward(self, input):
         vec, skip = input 
-        d1 = self.upc1(vec.view(-1, self.dim, 2, 2)) # 2 -> 4
+        d1 = self.upc1(vec.view(-1, self.dim, 14, 14)) # 2 -> 4
         up1 = self.up(d1) # 4 -> 8
         d2 = self.upc2(torch.cat([up1, skip[3]], 1)) # 8 x 8
         up2 = self.up(d2) # 8 -> 16 
@@ -186,14 +187,17 @@ class conv_network(nn.Module):
         return h_pred
 
 class pose_network(nn.Module):
-    def __init__(self):
+    def __init__(self, channel, height, width, input_size):
         super(pose_network, self).__init__()
 
-        self.theta_transform = nn.Sequential(nn.Linear(3, 2*2*16),
+        self.channel = channel
+        self.height = height
+        self.width = width
+        self.theta_transform = nn.Sequential(nn.Linear(input_size, height*width*channel),
                                              nn.Tanh(),
-                                             nn.Linear(2*2*16, 2*2*16),
+                                             nn.Linear(height*width*channel, height*width*channel),
                                              nn.Tanh())
     
     def forward(self, delta_theta):
-        z_theta = self.theta_transform(delta_theta).view(-1, 16, 2, 2)
+        z_theta = self.theta_transform(delta_theta).view(-1, self.channel, self.height, self.width)
         return z_theta

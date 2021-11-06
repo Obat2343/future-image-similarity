@@ -16,6 +16,7 @@ from scipy import signal
 from scipy import ndimage
 from PIL import Image, ImageDraw
 
+import torchvision
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import imageio
@@ -157,9 +158,7 @@ def make_image(tensor):
     tensor = tensor.cpu().clamp(0, 1)
     if tensor.size(0) == 1:
         tensor = tensor.expand(3, tensor.size(1), tensor.size(2))
-    return scipy.misc.toimage(tensor.numpy(),
-                              high=255*tensor.max(),
-                              channel_axis=0)
+    return torchvision.transforms.ToPILImage()(tensor)
 
 def draw_text_tensor(tensor, text):
     np_x = tensor.transpose(0, 1).transpose(1, 2).data.cpu().numpy()
