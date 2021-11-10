@@ -48,9 +48,10 @@ class ModelValue(nn.Module):
     """
       Value Network
     """
-    def __init__(self):
+    def __init__(self, input_past=True):
         super(ModelValue, self).__init__()
-        self.cfg = [3, 64, 128, 256, 256, 256, 256] # original [3, 64, 128, 256, 256]
+        self.cfg = [3 * (1 + int(input_past)), 64, 128, 256, 256, 256, 256] # original [3, 64, 128, 256, 256]
+        print(self.cfg)
         
         self.value = make_layers(self.cfg, False, s=2, unpool=False, in_channels=3)
         self.value_linear = nn.Sequential(nn.Linear(256*2*2, 1024),

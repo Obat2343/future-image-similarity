@@ -216,7 +216,7 @@ def test(x, diff_pose_rand, num_cand):
         reward_label = Variable(reward_label, requires_grad=False)
 
         reward_loss += loss_criterion(x_value_rand, reward_label)
-   
+
     return reward_loss.data.cpu().numpy(), x_value_rand.data.cpu().numpy()[0:3]
 
 # --------- training loop ------------------------------------
